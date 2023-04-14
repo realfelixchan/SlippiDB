@@ -1,0 +1,3 @@
+SlippiVirtualEnv@ C:\Users\pleasework\SlippiVirtualEnv
+`-- @slippi/slippi-js@6.6.1
+`-- @npm9.6.3
