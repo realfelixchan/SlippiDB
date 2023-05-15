@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 ## Requires nodeenv to run node programs within the venv
 import os
 import subprocess
@@ -24,9 +18,6 @@ import psycopg2
 import time
 
 
-# In[ ]:
-
-
 # Takes a dictionary of parseEvents and handlers and game file destination and returns a Dictionary of strings
 # Dependencies: parseDict, io, contextlib, slippi.parse
 # Input: Slippi File path, dictionary of event handlers from slippi.parse
@@ -40,20 +31,12 @@ def parseFile(slippiFile, parseDict):
             parsedDict[str(key).lower().replace('parseevent.', '')] = buffer.getvalue()
     return parsedDict
 
-
-# In[ ]:
-
-
 # Iterate for slippi files
 # Dependencies: glob
 # Input: Directory path
 # Output: glob iterator to track each .slp file
 def getSlippiFiles(baseDir):
     return glob.glob(baseDir+"/**/*.slp", recursive=True)
-
-
-# In[ ]:
-
 
 # Return the metadata for the JS package
 def getJSMetadata(slippiFile):
@@ -66,10 +49,6 @@ def getJSMetadata(slippiFile):
     jsMetadataDict[str(slippiFile)] = str(output).lstrip('b')
     return jsMetadataDict
 
-
-# In[ ]:
-
-
 # Takes any data as a list and splits it evenly between odd indices and even indices
 # Created function because of how data needs to be split with the way it's parsed
 # Input: A list
@@ -78,10 +57,6 @@ def splitList(dataAsList):
     playerOneList = dataAsList[0::2]
     playerTwoList = dataAsList[1::2]
     return playerOneList, playerTwoList
-
-
-# In[ ]:
-
 
 # Takes the JSmetadata information as a String and return player names, both Player 1 and Player 2 from String value, as two separaate Lists
 # Dependencies: re, splitList
@@ -93,10 +68,6 @@ def getPlayerNames(metadataString):
     playerOneList, playerTwoList = splitList(playerNames)
     return playerOneList, playerTwoList
 
-
-# In[ ]:
-
-
 # Takes the metadata information as a String and return character names, both Plyaer 1 and Player 2, as two separate lists
 # Dependencies: re, splitList
 # Input: Metadata String from getJSMetadata
@@ -105,10 +76,6 @@ def getcharIds(metadataString):
     charIds = re.findall(r'(?:characterId: )(\d+)', metadataString)
     playerOneList, playerTwoList = splitList(charIds)
     return playerOneList, playerTwoList
-
-
-# In[ ]:
-
 
 # Takes metadata information as a String and returns the stocks taken by each player as two separate lists
 # Dependencies: pyparsing, splitList
@@ -121,10 +88,6 @@ def getStocksTaken(metadataString):
         stocksTaken.append(match[0][0])
     playerOneList, playerTwoList = splitList(stocksTaken)
     return playerOneList, playerTwoList
-
-
-# In[ ]:
-
 
 # Takes a directory path that contains all Slippi files to analyze and place into a dictionary
 # Dependencies: parseData, slippi.parse
@@ -144,10 +107,6 @@ def parsedData(slippiFile):
     metadataDict[str(slippiFile)] = parseData['metadata']
     return metadataDict
 
-
-# In[ ]:
-
-
 # Only processes files that haven't been previously inserted into the database.
 # This is done by having duckDB's database file to insert into, as well as a log file for checking time stamp
 # Input: Directory path
@@ -165,10 +124,6 @@ def processNewFiles(slippiPath):
     newFiles = [f for f in slippiFiles if os.path.isfile(f) and os.path.getmtime(f) > lastProcessed]
     newFiles.sort()
     processSlippiFiles(newFiles)
-
-
-# In[ ]:
-
 
 # Takes a directory and parses through the raw data of each file. The purpose is to create CSV files for
 # uploading to AWS tables
@@ -219,10 +174,6 @@ def processSlippiFiles(slippiPath):
         conn.execute("INSERT INTO GameData SELECT * FROM gameDataDF")
 
     conn.execute("COPY gameData TO 'GameData.csv' (HEADER, DELIMITER ',')")
-
-
-# In[ ]:
-
 
 # Creating derivative CSVs for other tables
 # Dependencies: Pandas, numpy 
@@ -277,10 +228,6 @@ def createOtherCSVs(name = '2Chans'):
     ## Stage table csv
     stageResults.to_csv('StageResults.csv')
 
-
-# In[ ]:
-
-
 # Define function to process CSV and upload to RDS
 # Depndencies: boto3, psycopg2, createOtherCSVs, processNewFiles
 # Input: String of CSV path, String of destination table
@@ -316,40 +263,20 @@ def upload_to_rds(csvPath, tableName):
     # open the CSV file and copy its contents to the database
     with open(csvPath, 'r') as f:
         cur.copy_expert(sql=f"CSV", file=f)
-
     conn.commit()
-
     # close the cursor and connection
     cur.close()
     conn.close()
 
-
-# In[ ]:
-
-
+    
 slippiPath = r"C:\Users\pleasework\Documents\Slippi\SlippiAnalysisFiles"
 logFile = ".\logFile.txt"
-
-
-# In[ ]:
-
-
 roleARN = os.environ.get('slippiRoleARN')
 rdsUsername = os.environ['slippiRDSUsername']
 rdsPassword = os.environ['slippiRDSPassword']
 
-
-# In[ ]:
-
-
 processNewFiles(slippiPath)
 createOtherCSVs('2Chans')
-
-
-# In[ ]:
-
-
 upload_to_rds('.\GameData.csv', 'gamedata')
 upload_to_rds('.\MatchupResults.csv', 'matchupresults')
 upload_to_rds('.\StageResults.csv', 'stageresults')
-
